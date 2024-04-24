@@ -8,21 +8,14 @@
 
 // Define the structure of the RUDP packet header
 
-int main() {
-    int sockfd;
+int main(int argc, char *argv[]) {
+    char* ip = argv[1];
+    int port = atoi(argv[2]);
+    int sockfd = rudp_socket();
     struct sockaddr_in serverAddr;
     struct RUDP_Header packetHeader;
-    char text[MAX_PAYLOAD_SIZE] = "Hello, RUDP!"; // Example text data
-    uint16_t textLength = strlen(text) + 1; // Include null terminator in length
-    //uint16_t packetChecksum = 1; // Calculate checksum
+    uint16_t textLength = 1024; // Include null terminator in length
     uint8_t packetFlags = 0x01; // Example flags
-    int ackReceived;
-
-    // Create UDP socket
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
 
     // Configure server address
     memset(&serverAddr, 0, sizeof(serverAddr));
@@ -77,41 +70,18 @@ int main() {
         {
             amount++;
         }
-        //printf("i< %d\n", ((fileSize / MAX_PAYLOAD_SIZE)+(fileSize % MAX_PAYLOAD_SIZE));
-
         while (i <= amount)
         {
-            int retries = 0;
-            while (retries < MAX_RETRIES)
+            char txt[MAX_PAYLOAD_SIZE];
+            for (size_t s = 0; s < MAX_PAYLOAD_SIZE; s++)
             {
-                char txt[MAX_PAYLOAD_SIZE];
-                for (size_t s = 0; s < MAX_PAYLOAD_SIZE; s++)
-                {
-                    txt[s] = data[i*MAX_PAYLOAD_SIZE + s];
-                }
-                buildRUDPPacket(&packetHeader, txt, textLength, i, packetFlags);
-                if (sendto(sockfd, &packetHeader, ntohs(packetHeader.length), 0, (const struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
-                perror("sendto failed");
-                exit(EXIT_FAILURE);
-                }
-                printf("checksum: %d\n", i);
-                printf("Packet sent.\n");
-                ackReceived = receiveAck(sockfd, &serverAddr);
-                printf("ackReceived: %d\n", ackReceived);
-                if (ackReceived) {
-                break; // Exit the loop if acknowledgment received
-                }
-                retries++;
+                txt[s] = data[i*MAX_PAYLOAD_SIZE + s];
             }
-            if (retries == MAX_RETRIES) {
-            printf("Maximum number of retries reached. Exiting.\n");
-            break;
-            }
+            buildRUDPPacket(&packetHeader, txt, textLength, i, packetFlags);
+            rudp_send(sockfd, &serverAddr, &packetHeader);
             i++;
-        // Otherwise, retransmit the packet
         }
         char act; 
-        //printf("%d\n", sent);
         printf("Do you want to send more data? (y/n)\n");
         scanf(" %c", &act);
         if (act == 'n')

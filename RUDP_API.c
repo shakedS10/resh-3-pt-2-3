@@ -115,3 +115,46 @@ int receiveHandshake(int sockfd, struct sockaddr_in *clientAddr) {
     printf("Handshake packet received and acknowledged.\n");
     return 1; // Handshake successful
 }
+
+int rudp_socket() {
+    int sockfd;
+
+    // Create UDP socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+
+    return sockfd;
+}
+void rudp_close(int sockfd) {
+    close(sockfd);
+}
+
+void rudp_send(int sockfd, struct sockaddr_in *serverAddr, struct RUDP_Header *packetHeader) {
+    int retries = 0;
+    while (retries < MAX_RETRIES) {
+        if (sendto(sockfd, packetHeader, ntohs(packetHeader->length), 0, (const struct sockaddr *)serverAddr, sizeof(*serverAddr)) < 0) {
+            perror("sendto failed");
+            exit(EXIT_FAILURE);
+        }
+        printf("Packet sent.\n");
+        if (receiveAck(sockfd, serverAddr)) {
+            break; // Packet sent successfully
+        }
+        retries++;
+    }
+}
+
+uint16_t rudp_recv(int sockfd, struct sockaddr_in *clientAddr, struct RUDP_Header *packetHeader) {
+    socklen_t clientAddrLen = sizeof(*clientAddr);
+    int numBytesReceived = recvfrom(sockfd, packetHeader, sizeof(*packetHeader), 0, (struct sockaddr *)clientAddr, &clientAddrLen);
+    if (numBytesReceived < 0) {
+        perror("recvfrom failed");
+        exit(EXIT_FAILURE);
+    }
+    printf("Packet received.\n");
+    printf("Packet checksum: %d\n", ntohs(packetHeader->checksum));
+    return ntohs(packetHeader->checksum);
+}

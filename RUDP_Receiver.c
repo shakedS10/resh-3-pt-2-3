@@ -1,20 +1,17 @@
 
 #include "RUDP_API.c"
+void print_stats(clock_t start, clock_t end, int totalReceived) {
+    double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC; 
+    double bandwidth = (totalReceived / 1024.0) / time_taken; 
+    printf("Time taken: %.2f seconds\n", time_taken);
+    printf("Average Bandwidth: %.2f KB/s\n", bandwidth);
+}
 
 int main() {
-    int sockfd;
+    int sockfd = rudp_socket();
     struct sockaddr_in serverAddr, clientAddr;
     struct RUDP_Header packetHeader;
-    socklen_t addrLen = sizeof(clientAddr);
-    //char buffer[MAX_PAYLOAD_SIZE];
-    int numBytesReceived;
 
-    // Create UDP socket
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-    
     // Configure server address
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
@@ -36,38 +33,31 @@ int main() {
     
 
     if (receiveHandshake(sockfd, &clientAddr) <= 0) {
-        printf("Handshake failed. Exiting.\n");
+        printf("Handshake failed.\n");
         close(sockfd);
         exit(EXIT_FAILURE);
     }
-
+    clock_t start = clock();
     while (1) {
         int i = 1;
+        start = clock();
         for (size_t s = 0; s < amount; s++)
         {
             while (1)
             {
-            numBytesReceived = recvfrom(sockfd, &packetHeader, sizeof(packetHeader), 0, (struct sockaddr *)&clientAddr, &addrLen);
-            if (numBytesReceived < 0) {
-                perror("recvfrom failed");
-                exit(EXIT_FAILURE);
-            }
-            printf("Packet received.\n");
-            
-            uint16_t receivedChecksum = ntohs(packetHeader.checksum);
-            printf("checksum: %d\n", receivedChecksum);
-            printf("i: %d\n", i);
-            if (receivedChecksum == i)
-            {
-                sendAck(sockfd, &clientAddr);
-                i++;
-                break;
-            }
+                uint16_t receivedChecksum = rudp_recv(sockfd, &clientAddr, &packetHeader);
+                if (receivedChecksum == i)
+                {
+                    sendAck(sockfd, &clientAddr);
+                    i++;
+                    break;
+                }
             }
             
         }
-        
+        clock_t end = clock();
         printf("Received data\n");
+        print_stats(start, end, FILESIZE);
         
     }
 
