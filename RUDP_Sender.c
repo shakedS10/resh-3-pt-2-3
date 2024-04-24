@@ -33,6 +33,13 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    // Perform handshake with the receiver
+    if (performHandshake(sockfd, &serverAddr) <= 0) {
+        printf("Handshake failed. Exiting.\n");
+        close(sockfd);
+        return 1;
+    }
+
 
     char *fdata = util_generate_random_data(FILESIZE);
     FILE *file = fopen("a.txt", "w");

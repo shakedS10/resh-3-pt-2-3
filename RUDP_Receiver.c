@@ -1,13 +1,6 @@
 
 #include "RUDP_API.c"
 
-
-// Define the structure of the RUDP packet header
-
-
-// Function to send acknowledgment
-
-
 int main() {
     int sockfd;
     struct sockaddr_in serverAddr, clientAddr;
@@ -41,6 +34,13 @@ int main() {
             amount++;
         }
     
+
+    if (receiveHandshake(sockfd, &clientAddr) <= 0) {
+        printf("Handshake failed. Exiting.\n");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
     while (1) {
         int i = 1;
         for (size_t s = 0; s < amount; s++)

@@ -11,7 +11,7 @@
 #define FILESIZE 2000000
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 12345
-#define TIMEOUT_SEC 5
+#define TIMEOUT_SEC 2
 #define MAX_RETRIES 3
 
 char *util_generate_random_data(unsigned int size) {
@@ -74,4 +74,44 @@ void sendAck(int sockfd, struct sockaddr_in *clientAddr) {
         exit(EXIT_FAILURE);
     }
     printf("Acknowledge sent.\n");
+}
+int performHandshake(int sockfd, struct sockaddr_in *serverAddr) {
+    struct RUDP_Header handshakePacket;
+    uint8_t handshakeFlags = 0x02; // Example handshake flag
+
+    // Send handshake packet to the receiver
+    buildRUDPPacket(&handshakePacket, NULL, 0, 0, handshakeFlags); // Assuming handshake packet has no payload
+    if (sendto(sockfd, &handshakePacket, ntohs(handshakePacket.length), 0, (const struct sockaddr *)serverAddr, sizeof(*serverAddr)) < 0) {
+        perror("sendto failed");
+        return -1; // Error sending handshake packet
+    }
+    printf("Handshake packet sent.\n");
+
+    // Wait for acknowledgment from the receiver
+    if (!receiveAck(sockfd, serverAddr)) {
+        printf("Acknowledgment for handshake not received. Handshake failed.\n");
+        return 0; // Handshake failed
+    }
+
+    printf("Handshake successful.\n");
+    return 1; // Handshake successful
+}
+
+
+int receiveHandshake(int sockfd, struct sockaddr_in *clientAddr) {
+    struct RUDP_Header handshakePacket;
+
+    // Wait for handshake packet from the sender
+    socklen_t clientAddrLen = sizeof(*clientAddr);
+    int numBytesReceived = recvfrom(sockfd, &handshakePacket, sizeof(handshakePacket), 0, (struct sockaddr *)clientAddr, &clientAddrLen);
+    if (numBytesReceived < 0) {
+        perror("recvfrom failed");
+        return -1; // Error receiving handshake packet
+    }
+
+    // Send acknowledgment back to the sender
+    sendAck(sockfd, clientAddr);
+
+    printf("Handshake packet received and acknowledged.\n");
+    return 1; // Handshake successful
 }
