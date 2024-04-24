@@ -20,8 +20,8 @@ int main(int argc, char *argv[]) {
     // Configure server address
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(SERVER_PORT);
-    if (inet_pton(AF_INET, SERVER_IP, &serverAddr.sin_addr) <= 0) {
+    serverAddr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &serverAddr.sin_addr) <= 0) {
         perror("inet_pton failed");
         exit(EXIT_FAILURE);
     }

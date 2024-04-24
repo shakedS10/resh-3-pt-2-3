@@ -9,8 +9,7 @@
 
 #define MAX_PAYLOAD_SIZE 1024
 #define FILESIZE 2000000
-#define SERVER_IP "127.0.0.1"
-#define SERVER_PORT 12345
+//#define SERVER_IP "127.0.0.1"
 #define TIMEOUT_SEC 2
 #define MAX_RETRIES 3
 
