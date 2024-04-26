@@ -38,7 +38,7 @@ struct RUDP_Header {
 
 // Function to build an RUDP packet with data
 void buildRUDPPacket(struct RUDP_Header *header, char *data, uint16_t dataLength, uint16_t checksum, uint8_t flags) {
-    header->length = htons(sizeof(struct RUDP_Header) + dataLength); // Total length of packet
+    header->length = htons(sizeof(struct RUDP_Header)); // Total length of packet
     header->checksum = htons(checksum); // Convert checksum to network byte order
     header->flags = flags;
     // Copy data into packet after header
