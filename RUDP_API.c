@@ -10,7 +10,7 @@
 #define MAX_PAYLOAD_SIZE 1024
 #define FILESIZE 2000000
 //#define SERVER_IP "127.0.0.1"
-#define TIMEOUT_SEC 2
+#define TIMEOUT_SEC 10
 #define MAX_RETRIES 3
 
 char *util_generate_random_data(unsigned int size) {
@@ -65,8 +65,9 @@ int receiveAck(int sockfd, struct sockaddr_in *serverAddr) {
 }
 
 void sendAck(int sockfd, struct sockaddr_in *clientAddr) {
+    uint8_t ackFlags = 0x03; // Example acknowledgment flag
     struct RUDP_Header ackHeader;
-    memset(&ackHeader, 0, sizeof(ackHeader));
+    buildRUDPPacket(&ackHeader, "ACK", sizeof("ACK"), 0, ackFlags); 
     ackHeader.length = htons(sizeof(struct RUDP_Header));
     if (sendto(sockfd, &ackHeader, sizeof(ackHeader), 0, (const struct sockaddr *)clientAddr, sizeof(*clientAddr)) < 0) {
         perror("sendto failed");
@@ -79,7 +80,7 @@ int performHandshake(int sockfd, struct sockaddr_in *serverAddr) {
     uint8_t handshakeFlags = 0x02; // Example handshake flag
 
     // Send handshake packet to the receiver
-    buildRUDPPacket(&handshakePacket, NULL, 0, 0, handshakeFlags); // Assuming handshake packet has no payload
+    buildRUDPPacket(&handshakePacket, "SYN", sizeof("SYN"), 0, handshakeFlags); // Assuming handshake packet has no payload
     if (sendto(sockfd, &handshakePacket, ntohs(handshakePacket.length), 0, (const struct sockaddr *)serverAddr, sizeof(*serverAddr)) < 0) {
         perror("sendto failed");
         return -1; // Error sending handshake packet
@@ -91,6 +92,8 @@ int performHandshake(int sockfd, struct sockaddr_in *serverAddr) {
         printf("Acknowledgment for handshake not received. Handshake failed.\n");
         return 0; // Handshake failed
     }
+
+    sendAck(sockfd, serverAddr);
 
     printf("Handshake successful.\n");
     return 1; // Handshake successful
@@ -112,6 +115,11 @@ int receiveHandshake(int sockfd, struct sockaddr_in *clientAddr) {
     sendAck(sockfd, clientAddr);
 
     printf("Handshake packet received and acknowledged.\n");
+    printf("Waiting for acknowledgment...\n");
+    if(!receiveAck(sockfd, clientAddr)) {
+        printf("Acknowledgment for handshake not received. Handshake failed.\n");
+        return 0; // Handshake failed
+    }
     return 1; // Handshake successful
 }
 

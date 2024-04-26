@@ -1,21 +1,13 @@
 #include "RUDP_API.c"
 
-
-
-
-
-
-
-// Define the structure of the RUDP packet header
-
 int main(int argc, char *argv[]) {
     char* ip = argv[1];
     int port = atoi(argv[2]);
     int sockfd = rudp_socket();
     struct sockaddr_in serverAddr;
     struct RUDP_Header packetHeader;
-    uint16_t textLength = 1024; // Include null terminator in length
-    uint8_t packetFlags = 0x01; // Example flags
+    uint16_t textLength = MAX_PAYLOAD_SIZE;
+    uint8_t packetFlags = 0x01; // deaful flags
 
     // Configure server address
     memset(&serverAddr, 0, sizeof(serverAddr));
@@ -33,7 +25,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
+    // Generate random data to send and extract it from a file to array
     char *fdata = util_generate_random_data(FILESIZE);
     FILE *file = fopen("a.txt", "w");
 
@@ -68,17 +60,17 @@ int main(int argc, char *argv[]) {
         int amount = fileSize / MAX_PAYLOAD_SIZE;
         if(fileSize % MAX_PAYLOAD_SIZE != 0)
         {
-            amount++;
+            amount++; //find out how many packets we need to send
         }
         while (i <= amount)
         {
             char txt[MAX_PAYLOAD_SIZE];
             for (size_t s = 0; s < MAX_PAYLOAD_SIZE; s++)
             {
-                txt[s] = data[i*MAX_PAYLOAD_SIZE + s];
+                txt[s] = data[i*MAX_PAYLOAD_SIZE + s]; //split text to smaller buffers so they can fit in packets
             }
-            buildRUDPPacket(&packetHeader, txt, textLength, i, packetFlags);
-            rudp_send(sockfd, &serverAddr, &packetHeader);
+            buildRUDPPacket(&packetHeader, txt, textLength, i, packetFlags); //build packet
+            rudp_send(sockfd, &serverAddr, &packetHeader); //send packet
             i++;
         }
         char act; 
