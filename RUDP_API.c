@@ -9,8 +9,7 @@
 
 #define MAX_PAYLOAD_SIZE 1024
 #define FILESIZE 2000000
-//#define SERVER_IP "127.0.0.1"
-#define TIMEOUT_SEC 10
+#define TIMEOUT_SEC 2
 #define MAX_RETRIES 3
 
 char *util_generate_random_data(unsigned int size) {
@@ -41,7 +40,6 @@ void buildRUDPPacket(struct RUDP_Header *header, char *data, uint16_t dataLength
     header->length = htons(sizeof(struct RUDP_Header)); // Total length of packet
     header->checksum = htons(checksum); // Convert checksum to network byte order
     header->flags = flags;
-    // Copy data into packet after header
     memcpy(header->value, data, dataLength);
 }
 
@@ -77,10 +75,10 @@ void sendAck(int sockfd, struct sockaddr_in *clientAddr) {
 }
 int performHandshake(int sockfd, struct sockaddr_in *serverAddr) {
     struct RUDP_Header handshakePacket;
-    uint8_t handshakeFlags = 0x02; // Example handshake flag
+    uint8_t handshakeFlags = 0x02; // handshake flag
 
     // Send handshake packet to the receiver
-    buildRUDPPacket(&handshakePacket, "SYN", sizeof("SYN"), 0, handshakeFlags); // Assuming handshake packet has no payload
+    buildRUDPPacket(&handshakePacket, "SYN", sizeof("SYN"), 0, handshakeFlags); 
     if (sendto(sockfd, &handshakePacket, ntohs(handshakePacket.length), 0, (const struct sockaddr *)serverAddr, sizeof(*serverAddr)) < 0) {
         perror("sendto failed");
         return -1; // Error sending handshake packet
@@ -159,7 +157,9 @@ uint16_t rudp_recv(int sockfd, struct sockaddr_in *clientAddr, struct RUDP_Heade
     int numBytesReceived = recvfrom(sockfd, packetHeader, sizeof(*packetHeader), 0, (struct sockaddr *)clientAddr, &clientAddrLen);
     if (numBytesReceived < 0) {
         perror("recvfrom failed");
-        exit(EXIT_FAILURE);
+  
+        return 0xFFFF; // Error receiving packet
+        //exit(EXIT_FAILURE);
     }
     printf("Packet received.\n");
     printf("Packet checksum: %d\n", ntohs(packetHeader->checksum));

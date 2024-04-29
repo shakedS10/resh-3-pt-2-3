@@ -1,7 +1,9 @@
 
 #include "RUDP_API.c"
-void print_stats(clock_t start, clock_t end, int totalReceived) {
-    double time_taken = ((double)(end - start)) / CLOCKS_PER_SEC; 
+
+struct timeval start, end;
+void print_stats(struct timeval start, struct timeval end, int totalReceived) {
+    double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
     double bandwidth = (totalReceived / 1024.0) / time_taken; 
     static double avgBandwidth = 0;
     avgBandwidth += bandwidth;
@@ -45,12 +47,14 @@ int main(int argc, char *argv[]) {
         printf("Handshake failed.\n");
         close(sockfd);
         exit(EXIT_FAILURE);
+
     }
-    clock_t start = clock();
+    gettimeofday(&start, NULL);
+    
     while (1) {
         int i = 1;
-        start = clock();
-        for (size_t s = 0; s < amount; s++)
+        gettimeofday(&start, NULL);
+        while(i <= amount)
         {
             while (1)
             {
@@ -64,7 +68,7 @@ int main(int argc, char *argv[]) {
             }
             
         }
-        clock_t end = clock();
+        gettimeofday(&end, NULL);
         printf("Received data\n");
         print_stats(start, end, FILESIZE);
         

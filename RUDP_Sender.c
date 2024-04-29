@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in serverAddr;
     struct RUDP_Header packetHeader;
     uint16_t textLength = MAX_PAYLOAD_SIZE;
-    uint8_t packetFlags = 0x01; // deaful flags
+    uint8_t packetFlags = 0x01; // Deaful flags
 
     // Configure server address
     memset(&serverAddr, 0, sizeof(serverAddr));
